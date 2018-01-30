@@ -1,0 +1,399 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Deploy a VPC with 1 AZ and EC2 instance",
+    "Parameters": {
+        "pmVpcId": {
+            "Description": "VPC Id (e.g. POC)",
+            "Type": "String",
+            "Default": "POC"
+        },
+        "pmVpcRegion": {
+            "Description": "VPC Region",
+            "Type": "String",
+            "Default": "us-east-1"
+        },
+        "pmVpcCidr": {
+            "Description": "VPC CIDR (e.g. 10.0.0.0/16)",
+            "Type": "String",
+            "Default": "10.0.0.0/16"
+        },
+        "pmPubSubnetCidr": {
+            "Description": "Public subnet CIDR (e.g. 10.0.10.0/24)",
+            "Type": "String",
+            "Default": "10.0.10.0/24"
+        },
+        "pmPriSubnetCidr": {
+            "Description": "Private subnet CIDR (e.g. 10.0.50.0/24)",
+            "Type": "String",
+            "Default": "10.0.50.0/24"
+        },
+        "pmAz": {
+            "Description": "AZ for public and private subnets",
+            "Type": "AWS::EC2::AvailabilityZone::Name",
+            "Default": "us-east-1a"
+        },
+        "pmEc2ImageId": {
+            "Description": "EC2 Image Id",
+            "Type": "String",
+            "Default": "ami-28456852",
+            "AllowedValues": [
+                "ami-28456852",
+                "ami-eca289fb",
+                "ami-446f3521"
+            ],
+            "ConstraintDescription": "Must be a valid EC2 image id"
+        },
+        "pmEc2InstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "t2.micro",
+            "AllowedValues": [
+                "t2.micro",
+                "t2.small",
+                "t2.medium"
+            ],
+            "ConstraintDescription": "Must be a valid EC2 instance type"
+        },
+        "pmEc2VolumeSize": {
+            "Description": "Volume size for EC2 instance type",
+            "Type": "Number",
+            "Default": "10",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription": "Must be between 5 and 1024 Gb"
+        },
+        "pmAccessKeyId": {
+            "Description": "Existing access key to enable SSH access to EC2 instance",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "Default": "aws_cory1"
+        }
+    },
+    "Mappings": {},
+    "Resources": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "pmVpcCidr"
+                },
+                "EnableDnsSupport": true,
+                "EnableDnsHostnames": true,
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "pmVpcId"
+                        }
+                    }
+                ]
+            }
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmVpcId"
+                                    },
+                                    "IGW"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "AttachGateway": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "PublicSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pmPubSubnetCidr"
+                },
+                "AvailabilityZone": {
+                    "Ref": "pmAz"
+                },
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "Value": "Public"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmPubSubnetCidr"
+                                    },
+                                    {
+                                        "Ref": "pmAz"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "PrivateSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pmPriSubnetCidr"
+                },
+                "AvailabilityZone": {
+                    "Ref": "pmAz"
+                },
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "Value": "Private"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmPriSubnetCidr"
+                                    },
+                                    {
+                                        "Ref": "pmAz"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "PublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Public Route Table"
+                    }
+                ]
+            }
+        },
+        "PublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "AttachGateway",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "PublicSubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PublicSubnet"
+                },
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                }
+            }
+        },
+        "PrivateRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Private Route Table"
+                    }
+                ]
+            }
+        },
+        "PrivateSubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PrivateSubnet"
+                },
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                }
+            }
+        },
+        "SecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "GroupName": "DMZ-SG",
+                "GroupDescription": "Enable SSH access via port 22",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "DMZ-SG"
+                    }
+                ]
+            }
+        },
+        "EC2InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "EC2InstanceRole"
+                    }
+                ]
+            }
+        },
+        "EC2InstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "POC-ACCESS",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ec2.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+                    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+                    "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
+                    "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
+                ]
+            }
+        },
+        "EC2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn": "AttachGateway",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "pmEc2InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "pmEc2ImageId"
+                },
+                "KeyName": {
+                    "Ref": "pmAccessKeyId"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": [
+                            {
+                                "Ref": "SecurityGroup"
+                            }
+                        ],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+                            "Ref": "PublicSubnet"
+                        }
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "EC2InstanceProfile"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -v\n",
+                                "sudo yum update -y\n",
+                                "sudo yum install aws-cli -y\n"
+                            ]
+                        ]
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "DMZ"
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "VPC": {
+            "Value": {
+                "Ref": "VPC"
+            }
+        },
+        "InternetGateway": {
+            "Value": {
+                "Ref": "InternetGateway"
+            }
+        },
+        "EC2Instance": {
+            "Value": {
+                "Ref": "EC2Instance"
+            }
+        }
+    }
+}
