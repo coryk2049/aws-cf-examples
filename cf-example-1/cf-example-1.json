@@ -31,7 +31,7 @@
             "Description": "AZ for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1a"
-        },
+        }
     },
     "Resources": {
         "VPC": {
@@ -52,7 +52,7 @@
                 ]
             }
         },
-        "InternetGateway": {
+        "IGW": {
             "Type": "AWS::EC2::InternetGateway",
             "Properties": {
                 "Tags": [
@@ -73,14 +73,14 @@
                 ]
             }
         },
-        "AttachGateway": {
+        "IGWAttach": {
             "Type": "AWS::EC2::VPCGatewayAttachment",
             "Properties": {
                 "VpcId": {
                     "Ref": "VPC"
                 },
                 "InternetGatewayId": {
-                    "Ref": "InternetGateway"
+                    "Ref": "IGW"
                 }
             }
         },
@@ -172,14 +172,14 @@
         },
         "PublicRoute": {
             "Type": "AWS::EC2::Route",
-            "DependsOn": "AttachGateway",
+            "DependsOn": "IGWAttach",
             "Properties": {
                 "RouteTableId": {
                     "Ref": "PublicRouteTable"
                 },
                 "DestinationCidrBlock": "0.0.0.0/0",
                 "GatewayId": {
-                    "Ref": "InternetGateway"
+                    "Ref": "IGW"
                 }
             }
         },
@@ -226,9 +226,9 @@
                 "Ref": "VPC"
             }
         },
-        "InternetGateway": {
+        "IGW": {
             "Value": {
-                "Ref": "InternetGateway"
+                "Ref": "IGW"
             }
         }
     }

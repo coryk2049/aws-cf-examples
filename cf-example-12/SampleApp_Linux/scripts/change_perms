@@ -1,0 +1,5 @@
+#!/bin/bash
+# change some perms when you are ready
+service httpd status
+pwd
+ls -l

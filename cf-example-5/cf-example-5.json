@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Deploy a VPC with 2 AZ, WebServers, ALB, and ASG",
+    "Description": "Deploy a VPC with 2 AZ, IGW, WebServers, ALB, and ASG",
     "Parameters": {
         "pmVpcId": {
             "Description": "VPC Id (e.g. POC)",
@@ -379,7 +379,7 @@
                     "Ref": "VPC"
                 },
                 "GroupName": "WEB-SG",
-                "GroupDescription": "Enable SSH access via port 22",
+                "GroupDescription": "Enable SSH, HTTP, and HTTPS access",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
@@ -440,6 +440,7 @@
                     "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
                     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
                     "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
                     "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
                 ]
             }
@@ -602,10 +603,7 @@
                             [
                                 "#!/bin/bash -xe\n",
                                 "yum update -y\n",
-                                "yum install aws-cfn-bootstrap aws-cli nginx git unzip -y\n",
-                                "service nginx start\n",
-                                "cp /usr/share/nginx/html/index.html /usr/share/nginx/html/nginx.html\n",
-                                "chkconfig nginx on\n",
+                                "yum install -y aws-cfn-bootstrap aws-cli\n",
                                 "/opt/aws/bin/cfn-init -v ",
                                 "         --stack ",
                                 {
@@ -627,7 +625,13 @@
                                 {
                                     "Ref": "pmVpcRegion"
                                 },
-                                "\n"
+                                "\n",
+                                "yum install -y nginx unzip tree\n",
+                                "service nginx start\n",
+                                "cp /usr/share/nginx/html/index.html /usr/share/nginx/html/nginx.html\n",
+                                "chkconfig nginx on\n",
+                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
+                                "start amazon-ssm-agent\n"
                             ]
                         ]
                     }

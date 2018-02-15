@@ -1,0 +1,179 @@
+
+#
+# Delete subscribers index
+#
+curl -k -XDELETE https://localhost:9200/subscribers
+
+#
+# Create subscribers index
+#
+curl -k -XPUT https://localhost:9200/subscribers?pretty=true -d ' {
+    "settings": {
+        "index": {
+            "number_of_shards": 3,
+            "number_of_replicas": 0
+        }
+    }
+}
+'
+
+#
+# Create subscribers index mapping
+#
+curl -k -XPUT https://localhost:9200/subscribers/_mapping/subscriber?pretty=true -d ' {
+    "subscriber": {
+        "properties": {
+            "name": {
+                "type": "string",
+                "store": true
+            },
+            "email": {
+                "type": "string",
+                "store": true
+            },
+            "phoneno": {
+                "type": "string",
+                "store": true
+            },
+            "status" : {
+                "type" : "boolean",
+                "store": "true"
+            },
+            "insert_date": {
+                "type": "date",
+                "format": "date_time",
+                "store": true
+            }
+        }
+    }
+}
+'
+
+#
+# Insert some data into subscribers with auto generation of _id
+#
+curl -k -XPOST https://localhost:9200/subscribers/subscriber/?pretty=true -d ' {
+    "name": "Robert Smith",
+    "email": "rsmith@example.com",
+    "phoneno": "5711002001",
+    "status": "true",
+    "insert_date": "2017-12-01T01:02:03.000-06:00"
+}
+' -H 'Content-Type: application/json'
+
+curl -k -XPOST https://localhost:9200/subscribers/subscriber/?pretty=true -d ' {
+    "name": "John Taylor",
+    "email": "jtaylor@example.com",
+    "phoneno": "5711002002",
+    "status": "true",
+    "insert_date": "2017-12-02T01:02:03.000-06:00"
+}
+' -H 'Content-Type: application/json'
+
+curl -k -XPOST https://localhost:9200/subscribers/subscriber/?pretty=true -d ' {
+    "name": "Clare Grogan",
+    "email": "clareg@example.com",
+    "phoneno": "5711002003",
+    "status": "false",
+    "insert_date": "2017-12-03T01:02:03.000-06:00"
+}
+' -H 'Content-Type: application/json'
+
+curl -k -XPOST https://localhost:9200/subscribers/subscriber/?pretty=true -d ' {
+    "name": "Rachel Dolls",
+    "email": "rachel.dolls@example.com",
+    "phoneno": "5711002009",
+    "status": "true",
+    "insert_date": "2017-12-12T01:02:03.000-06:00"
+}
+' -H 'Content-Type: application/json'
+
+#
+# Example of bulk insertion
+#
+curl -k -XPOST https://localhost:9200/subscribers/subscriber/_bulk?pretty=true -d '
+{
+  "index": {}
+} {
+  "name": "John Candy",
+  "email": "john.candy@example.com",
+  "phoneno": "5711002011",
+  "status": "true",
+  "insert_date": "2017-12-13T01:02:03.000-06:00"
+} {
+  "index": {}
+} {
+  "name": "Simon Smith",
+  "email": "simon.smith@example.com",
+  "phoneno": "5711002012",
+  "status": "true",
+  "insert_date": "2017-12-13T01:02:03.000-06:00"
+} {
+  "index": {}
+} {
+  "name": "Toby England",
+  "email": "tobye@example.com",
+  "phoneno": "5711002013",
+  "status": "true",
+  "insert_date": "2017-12-13T01:02:03.000-06:00"
+} {
+  "index": {}
+} {
+  "name": "Emily Poole",
+  "email": "emilyp123@example.com",
+  "phoneno": "5711002019",
+  "status": "true",
+  "insert_date": "2017-12-13T01:02:03.000-06:00"
+}' -H 'Content-Type: application/json'
+
+#
+# Example of queries
+#
+curl -k -XGET https://localhost:9200/subscribers/subscriber/_search?pretty=true -d ' {
+    "query": {
+        "query_string": {
+            "query": "example.com"
+        }
+    }
+}
+'
+
+curl -k -XGET https://localhost:9200/subscribers/subscriber/_search?pretty=true -d ' {
+    "query": {
+        "terms": {
+            "_id": ["2","3"]
+        }
+    }
+}
+'
+
+curl -k -XGET https://localhost:9200/subscribers/subscriber/_search?pretty=true -d ' {
+    "query": {
+        "bool": {
+            "filter": {
+                "term": {
+                    "status": "false"
+                }
+            }
+        }
+    }
+}
+'
+
+curl -k -XGET https://localhost:9200/subscribers/subscriber/_search?pretty=true -d ' {
+    "query": {
+        "bool": {
+            "must": [
+                {
+                    "range": {
+                        "insert_date": {
+                            "gte": "2017-12-01T01:00:00.000-06:00",
+                            "lte": "2017-12-03T01:00:00.000-06:00"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}
+'

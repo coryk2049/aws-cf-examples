@@ -67,7 +67,7 @@
                 ]
             }
         },
-        "InternetGateway": {
+        "IGW": {
             "Type": "AWS::EC2::InternetGateway",
             "Properties": {
                 "Tags": [
@@ -88,14 +88,14 @@
                 ]
             }
         },
-        "AttachGateway": {
+        "IGWAttach": {
             "Type": "AWS::EC2::VPCGatewayAttachment",
             "Properties": {
                 "VpcId": {
                     "Ref": "VPC"
                 },
                 "InternetGatewayId": {
-                    "Ref": "InternetGateway"
+                    "Ref": "IGW"
                 }
             }
         },
@@ -259,18 +259,18 @@
         },
         "PublicRoute": {
             "Type": "AWS::EC2::Route",
-            "DependsOn": "AttachGateway",
+            "DependsOn": "IGWAttach",
             "Properties": {
                 "RouteTableId": {
                     "Ref": "PublicRouteTable"
                 },
                 "DestinationCidrBlock": "0.0.0.0/0",
                 "GatewayId": {
-                    "Ref": "InternetGateway"
+                    "Ref": "IGW"
                 }
             }
         },
-        "PublicSubnetRouteTableAssociation1": {
+        "PublicSubnet1RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
@@ -281,7 +281,7 @@
                 }
             }
         },
-        "PublicSubnetRouteTableAssociation2": {
+        "PublicSubnet2RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
@@ -306,7 +306,7 @@
                 ]
             }
         },
-        "PrivateSubnetRouteTableAssociation1": {
+        "PrivateSubnet1RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
@@ -317,7 +317,7 @@
                 }
             }
         },
-        "PrivateSubnetRouteTableAssociation2": {
+        "PrivateSubnet2RouteTableAssociation": {
             "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
                 "SubnetId": {
@@ -335,9 +335,9 @@
                 "Ref": "VPC"
             }
         },
-        "InternetGateway": {
+        "IGW": {
             "Value": {
-                "Ref": "InternetGateway"
+                "Ref": "IGW"
             }
         }
     }

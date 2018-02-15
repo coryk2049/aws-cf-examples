@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Deploy a VPC with 1 AZ, IGW, and EC2",
+    "Description": "Deploy a VPC with 1 AZ, IGW, DMZ, and ES.",
     "Parameters": {
         "pmVpcId": {
             "Description": "VPC Id (e.g. POC)",
@@ -22,11 +22,6 @@
             "Type": "String",
             "Default": "10.0.10.0/24"
         },
-        "pmPriSubnetCidr": {
-            "Description": "Private subnet CIDR (e.g. 10.0.50.0/24)",
-            "Type": "String",
-            "Default": "10.0.50.0/24"
-        },
         "pmAz": {
             "Description": "AZ for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
@@ -35,41 +30,108 @@
         "pmEc2ImageId": {
             "Description": "EC2 Image Id",
             "Type": "String",
-            "Default": "ami-28456852",
-            "AllowedValues": [
-                "ami-28456852",
-                "ami-eca289fb",
-                "ami-446f3521"
-            ],
-            "ConstraintDescription": "Must be a valid EC2 image id"
+            "Default": "ami-28456852"
         },
         "pmEc2InstanceType": {
             "Description": "EC2 instance type",
             "Type": "String",
-            "Default": "t2.micro",
-            "AllowedValues": [
-                "t2.micro",
-                "t2.small",
-                "t2.medium"
-            ],
-            "ConstraintDescription": "Must be a valid EC2 instance type"
+            "Default": "t2.micro"
         },
         "pmEc2VolumeSize": {
             "Description": "Volume size for EC2 instance type",
             "Type": "Number",
-            "Default": "5",
-            "MinValue": "5",
-            "MaxValue": "1024",
-            "ConstraintDescription": "Must be between 5 and 1024 Gb"
+            "Default": "5"
         },
         "pmAccessKeyId": {
             "Description": "Existing access key to enable SSH access to EC2 instance",
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
+        },
+        "pmEsDomainName": {
+            "Description": "ES domain name",
+            "Type": "String",
+            "Default": "poc-es"
+        },
+        "pmEsVersion": {
+            "Description": "ES version",
+            "Type": "String",
+            "Default": "5.5"
+        },
+        "pmEsEc2InstanceType": {
+            "Description": "ES EC2 instance type",
+            "Type": "String",
+            "Default": "t2.small.elasticsearch"
+        },
+        "pmEsEbsVolumeSize": {
+            "Description": "ES EBS volume size",
+            "Type": "String",
+            "Default": "10"
         }
     },
     "Mappings": {},
     "Resources": {
+        "EsDomain": {
+            "Type": "AWS::Elasticsearch::Domain",
+            "Properties": {
+                "DomainName": {
+                    "Ref": "pmEsDomainName"
+                },
+                "ElasticsearchVersion": {
+                    "Ref": "pmEsVersion"
+                },
+                "ElasticsearchClusterConfig": {
+                    "InstanceCount": "1",
+                    "InstanceType": {
+                        "Ref": "pmEsEc2InstanceType"
+                    }
+                },
+                "EBSOptions": {
+                    "EBSEnabled": "true",
+                    "Iops": 0,
+                    "VolumeSize": {
+                        "Ref": "pmEsEbsVolumeSize"
+                    },
+                    "VolumeType": "standard"
+                },
+                "SnapshotOptions": {
+                    "AutomatedSnapshotStartHour": "0"
+                },
+                "AccessPolicies": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": "*"
+                            },
+                            "Action": "es:*",
+                            "Resource": "*"
+                        }
+                    ]
+                },
+                "AdvancedOptions": {
+                    "rest.action.multi.allow_explicit_index": "true"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "POC-ES"
+                    }
+                ],
+                "VPCOptions": {
+                    "SubnetIds": [
+                        {
+                            "Ref": "PublicSubnet"
+                        }
+                    ],
+                    "SecurityGroupIds": [
+                        {
+                            "Ref": "DMZSG"
+                        }
+                    ]
+                }
+            }
+        },
         "VPC": {
             "Type": "AWS::EC2::VPC",
             "Properties": {
@@ -156,42 +218,6 @@
                 ]
             }
         },
-        "PrivateSubnet": {
-            "Type": "AWS::EC2::Subnet",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "CidrBlock": {
-                    "Ref": "pmPriSubnetCidr"
-                },
-                "AvailabilityZone": {
-                    "Ref": "pmAz"
-                },
-                "Tags": [
-                    {
-                        "Key": "Type",
-                        "Value": "Private"
-                    },
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "|",
-                                [
-                                    {
-                                        "Ref": "pmPriSubnetCidr"
-                                    },
-                                    {
-                                        "Ref": "pmAz"
-                                    }
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
         "PublicRouteTable": {
             "Type": "AWS::EC2::RouteTable",
             "Properties": {
@@ -230,31 +256,6 @@
                 }
             }
         },
-        "PrivateRouteTable": {
-            "Type": "AWS::EC2::RouteTable",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "Private Route Table"
-                    }
-                ]
-            }
-        },
-        "PrivateSubnetRouteTableAssociation": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "SubnetId": {
-                    "Ref": "PrivateSubnet"
-                },
-                "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
-                }
-            }
-        },
         "DMZSG": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
@@ -262,7 +263,7 @@
                     "Ref": "VPC"
                 },
                 "GroupName": "DMZ-SG",
-                "GroupDescription": "Enable SSH, HTTP, and HTTPS access",
+                "GroupDescription": "Enable SSH access",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
@@ -324,11 +325,12 @@
                     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
                     "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
                     "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonESFullAccess",
                     "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
                 ]
             }
         },
-        "EC2Instance": {
+        "DMZ": {
             "Type": "AWS::EC2::Instance",
             "DependsOn": "IGWAttach",
             "Properties": {
@@ -366,9 +368,13 @@
                             [
                                 "#!/bin/bash -v\n",
                                 "yum update -y\n",
-                                "yum install -y aws-cli telnet zip unzip git tree\n",
+                                "yum install -y aws-cli epel-release telnet unzip tree\n",
                                 "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
-                                "start amazon-ssm-agent\n"
+                                "start amazon-ssm-agent\n",
+                                "easy_install pip\n",
+                                "/usr/local/bin/pip install elasticsearch\n",
+                                "/usr/local/bin/pip install requests_aws4auth\n",
+                                "/usr/local/bin/pip install boto3"
                             ]
                         ]
                     }
@@ -393,9 +399,25 @@
                 "Ref": "IGW"
             }
         },
-        "EC2": {
+        "DMZ": {
             "Value": {
-                "Ref": "EC2Instance"
+                "Ref": "DMZ"
+            }
+        },
+        "ESDomainArn": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EsDomain",
+                    "DomainArn"
+                ]
+            }
+        },
+        "ESDomainEndpoint": {
+            "Value": {
+                "Fn::GetAtt": [
+                    "EsDomain",
+                    "DomainEndpoint"
+                ]
             }
         }
     }

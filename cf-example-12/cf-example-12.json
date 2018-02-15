@@ -1,6 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Deploy a VPC with 1 AZ, IGW, and EC2",
+    "Description": "Deploy a VPC with 1 AZ, IGW, EC2, SSM, and CodeDeploy agents.",
     "Parameters": {
         "pmVpcId": {
             "Description": "VPC Id (e.g. POC)",
@@ -22,11 +22,6 @@
             "Type": "String",
             "Default": "10.0.10.0/24"
         },
-        "pmPriSubnetCidr": {
-            "Description": "Private subnet CIDR (e.g. 10.0.50.0/24)",
-            "Type": "String",
-            "Default": "10.0.50.0/24"
-        },
         "pmAz": {
             "Description": "AZ for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
@@ -35,32 +30,17 @@
         "pmEc2ImageId": {
             "Description": "EC2 Image Id",
             "Type": "String",
-            "Default": "ami-28456852",
-            "AllowedValues": [
-                "ami-28456852",
-                "ami-eca289fb",
-                "ami-446f3521"
-            ],
-            "ConstraintDescription": "Must be a valid EC2 image id"
+            "Default": "ami-28456852"
         },
         "pmEc2InstanceType": {
             "Description": "EC2 instance type",
             "Type": "String",
-            "Default": "t2.micro",
-            "AllowedValues": [
-                "t2.micro",
-                "t2.small",
-                "t2.medium"
-            ],
-            "ConstraintDescription": "Must be a valid EC2 instance type"
+            "Default": "t2.micro"
         },
         "pmEc2VolumeSize": {
             "Description": "Volume size for EC2 instance type",
             "Type": "Number",
-            "Default": "5",
-            "MinValue": "5",
-            "MaxValue": "1024",
-            "ConstraintDescription": "Must be between 5 and 1024 Gb"
+            "Default": "5"
         },
         "pmAccessKeyId": {
             "Description": "Existing access key to enable SSH access to EC2 instance",
@@ -156,42 +136,6 @@
                 ]
             }
         },
-        "PrivateSubnet": {
-            "Type": "AWS::EC2::Subnet",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "CidrBlock": {
-                    "Ref": "pmPriSubnetCidr"
-                },
-                "AvailabilityZone": {
-                    "Ref": "pmAz"
-                },
-                "Tags": [
-                    {
-                        "Key": "Type",
-                        "Value": "Private"
-                    },
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "|",
-                                [
-                                    {
-                                        "Ref": "pmPriSubnetCidr"
-                                    },
-                                    {
-                                        "Ref": "pmAz"
-                                    }
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
         "PublicRouteTable": {
             "Type": "AWS::EC2::RouteTable",
             "Properties": {
@@ -230,39 +174,14 @@
                 }
             }
         },
-        "PrivateRouteTable": {
-            "Type": "AWS::EC2::RouteTable",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "Private Route Table"
-                    }
-                ]
-            }
-        },
-        "PrivateSubnetRouteTableAssociation": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "SubnetId": {
-                    "Ref": "PrivateSubnet"
-                },
-                "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
-                }
-            }
-        },
-        "DMZSG": {
+        "POCSG": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "GroupName": "DMZ-SG",
-                "GroupDescription": "Enable SSH, HTTP, and HTTPS access",
+                "GroupName": "POC-SG",
+                "GroupDescription": "Enable SSH access",
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
@@ -286,7 +205,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "DMZ-SG"
+                        "Value": "POC-SG"
                     }
                 ]
             }
@@ -305,12 +224,12 @@
         "EC2InstanceRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "POC-ACCESS",
+                "RoleName": "EC2ServiceRole",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
                         {
-                            "Sid": "",
+                            "Sid": "EC2TrustPolicy",
                             "Effect": "Allow",
                             "Principal": {
                                 "Service": "ec2.amazonaws.com"
@@ -319,16 +238,43 @@
                         }
                     ]
                 },
+                "Path": "/",
                 "ManagedPolicyArns": [
                     "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
                     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
                     "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
                     "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonESFullAccess",
                     "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
                 ]
             }
         },
-        "EC2Instance": {
+        "CodeDeployServiceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "CodeDeployServiceRole",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "CodeDeployTrustPolicy",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "codedeploy.amazonaws.com"
+                                ]
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+                ]
+            }
+        },
+        "POC": {
             "Type": "AWS::EC2::Instance",
             "DependsOn": "IGWAttach",
             "Properties": {
@@ -345,7 +291,7 @@
                     {
                         "GroupSet": [
                             {
-                                "Ref": "DMZSG"
+                                "Ref": "POCSG"
                             }
                         ],
                         "AssociatePublicIpAddress": "true",
@@ -366,9 +312,14 @@
                             [
                                 "#!/bin/bash -v\n",
                                 "yum update -y\n",
-                                "yum install -y aws-cli telnet zip unzip git tree\n",
+                                "yum install -y aws-cli epel-release ruby telnet zip unzip tree\n",
                                 "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
-                                "start amazon-ssm-agent\n"
+                                "start amazon-ssm-agent\n",
+                                "cd /home/ec2-user\n",
+                                "aws s3 cp s3://aws-codedeploy-us-east-1/latest/install . --region us-east-1\n",
+                                "chmod +x ./install\n",
+                                "./install auto\n",
+                                "sleep 3\n"
                             ]
                         ]
                     }
@@ -376,7 +327,7 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "DMZ"
+                        "Value": "POC"
                     }
                 ]
             }
@@ -393,9 +344,9 @@
                 "Ref": "IGW"
             }
         },
-        "EC2": {
+        "POC": {
             "Value": {
-                "Ref": "EC2Instance"
+                "Ref": "POC"
             }
         }
     }
