@@ -1,15 +1,22 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Deploy a VPC with 1 AZ, IGW, NAT, DMZ, Web, and DB.",
+    "Description": "Deploy a VPC with 1 AZ, IGW, and optional BastionServer.",
     "Metadata": {
         "AWS::CloudFormation::Interface": {
             "ParameterGroups": [
                 {
                     "Label": {
+                        "default": "Resource Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmNamePrefix"
+                    ]
+                },
+                {
+                    "Label": {
                         "default": "VPC Configuration Parameters"
                     },
                     "Parameters": [
-                        "pmVpcId",
                         "pmVpcRegion",
                         "pmAz",
                         "pmVpcCidr",
@@ -19,19 +26,20 @@
                 },
                 {
                     "Label": {
-                        "default": "EC2 Configuration Parameters"
+                        "default": "Bastion Configuration Parameters"
                     },
                     "Parameters": [
-                        "pmEc2ImageId",
-                        "pmEc2InstanceType",
-                        "pmEc2VolumeSize",
-                        "pmEc2AccessKeyId"
+                        "pmDeployBastion",
+                        "pmBastionImageId",
+                        "pmBastionInstanceType",
+                        "pmBastionVolumeSize",
+                        "pmBastionAccessKeyId"
                     ]
                 }
             ],
             "ParameterLabels": {
-                "pmVpcId": {
-                    "default": "Enter VPC id"
+                "pmNamePrefix": {
+                    "default": "Enter resource name prefix"
                 },
                 "pmVpcCidr": {
                     "default": "Enter VPC CIDR"
@@ -48,25 +56,31 @@
                 "pmPriSubnetCidr": {
                     "default": "Enter VPC private subnet"
                 },
-                "pmEc2ImageId": {
-                    "default": "Enter EC2 image id"
+                "pmDeployBastion": {
+                    "default": "Enter Bastion deployment"
                 },
-                "pmEc2InstanceType": {
-                    "default": "Enter EC2 instance type"
+                "pmBastionImageId": {
+                    "default": "Enter Bastion image id"
                 },
-                "pmEc2VolumeSize": {
-                    "default": "Enter EC2 volume size"
+                "pmBastionInstanceType": {
+                    "default": "Enter Bastion instance type"
                 },
-                "pmEc2AccessKeyId": {
-                    "default": "Enter EC2 SSH access key"
+                "pmBastionVolumeSize": {
+                    "default": "Enter Bastion volume size"
+                },
+                "pmBastionAccessKeyId": {
+                    "default": "Enter Bastion SSH access key"
                 }
             }
         }
     },
     "Parameters": {
-        "pmVpcId": {
+        "pmNamePrefix": {
             "Type": "String",
-            "Default": "POC"
+            "MaxLength": 15,
+            "MinLength": 2,
+            "AllowedPattern": "[a-zA-Z][a-zA-Z0-9]*",
+            "Default": "poc"
         },
         "pmVpcRegion": {
             "Type": "String",
@@ -88,21 +102,54 @@
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1a"
         },
-        "pmEc2ImageId": {
+        "pmDeployBastion": {
+            "Default": "Yes",
             "Type": "String",
-            "Default": "ami-28456852"
+            "AllowedValues": [
+                "No",
+                "Yes"
+            ]
         },
-        "pmEc2InstanceType": {
+        "pmBastionImageId": {
             "Type": "String",
-            "Default": "t2.micro"
+            "Default": "ami-28456852",
+            "AllowedValues": [
+                "ami-28456852",
+                "ami-eca289fb",
+                "ami-446f3521"
+            ],
+            "ConstraintDescription": "Must be a valid Bastion EC2 image id"
         },
-        "pmEc2VolumeSize": {
+        "pmBastionInstanceType": {
+            "Type": "String",
+            "Default": "t2.micro",
+            "AllowedValues": [
+                "t2.micro",
+                "t2.small",
+                "t2.medium"
+            ],
+            "ConstraintDescription": "Must be a valid Bastion EC2 instance type"
+        },
+        "pmBastionVolumeSize": {
             "Type": "Number",
-            "Default": "5"
+            "Default": "5",
+            "MinValue": "5",
+            "MaxValue": "1024",
+            "ConstraintDescription": "Must be between 5 and 1024 Gb"
         },
-        "pmEc2AccessKeyId": {
+        "pmBastionAccessKeyId": {
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
+        }
+    },
+    "Conditions": {
+        "DeployBastion": {
+            "Fn::Equals": [
+                {
+                    "Ref": "pmDeployBastion"
+                },
+                "Yes"
+            ]
         }
     },
     "Mappings": {},
@@ -119,7 +166,15 @@
                     {
                         "Key": "Name",
                         "Value": {
-                            "Ref": "pmVpcId"
+                            "Fn::Join": [
+                                "",
+                                [
+                                    {
+                                        "Ref": "pmNamePrefix"
+                                    },
+                                    "-vpc"
+                                ]
+                            ]
                         }
                     }
                 ]
@@ -133,12 +188,12 @@
                         "Key": "Name",
                         "Value": {
                             "Fn::Join": [
-                                "|",
+                                "",
                                 [
                                     {
-                                        "Ref": "pmVpcId"
+                                        "Ref": "pmNamePrefix"
                                     },
-                                    "IGW"
+                                    "-igw"
                                 ]
                             ]
                         }
@@ -156,45 +211,6 @@
                     "Ref": "IGW"
                 }
             }
-        },
-        "EIP": {
-            "Type": "AWS::EC2::EIP",
-            "Properties": {
-                "Domain": "vpc"
-            }
-        },
-        "NGW": {
-            "Type": "AWS::EC2::NatGateway",
-            "Properties": {
-                "AllocationId": {
-                    "Fn::GetAtt": [
-                        "EIP",
-                        "AllocationId"
-                    ]
-                },
-                "SubnetId": {
-                    "Ref": "PublicSubnet"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "|",
-                                [
-                                    {
-                                        "Ref": "pmVpcId"
-                                    },
-                                    "NGW"
-                                ]
-                            ]
-                        }
-                    }
-                ]
-            },
-            "DependsOn": [
-                "PublicRouteTable"
-            ]
         },
         "PublicSubnet": {
             "Type": "AWS::EC2::Subnet",
@@ -217,14 +233,12 @@
                         "Key": "Name",
                         "Value": {
                             "Fn::Join": [
-                                "|",
+                                "",
                                 [
                                     {
-                                        "Ref": "pmPubSubnetCidr"
+                                        "Ref": "pmNamePrefix"
                                     },
-                                    {
-                                        "Ref": "pmAz"
-                                    }
+                                    "-public-sn"
                                 ]
                             ]
                         }
@@ -253,14 +267,12 @@
                         "Key": "Name",
                         "Value": {
                             "Fn::Join": [
-                                "|",
+                                "",
                                 [
                                     {
-                                        "Ref": "pmPriSubnetCidr"
+                                        "Ref": "pmNamePrefix"
                                     },
-                                    {
-                                        "Ref": "pmAz"
-                                    }
+                                    "-private-sn"
                                 ]
                             ]
                         }
@@ -277,7 +289,17 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Public Route Table"
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    {
+                                        "Ref": "pmNamePrefix"
+                                    },
+                                    "-public-rtb"
+                                ]
+                            ]
+                        }
                     }
                 ]
             }
@@ -306,18 +328,6 @@
                 }
             }
         },
-        "PrivateRoute": {
-            "Type": "AWS::EC2::Route",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "PrivateRouteTable"
-                },
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "NatGatewayId": {
-                    "Ref": "NGW"
-                }
-            }
-        },
         "PrivateRouteTable": {
             "Type": "AWS::EC2::RouteTable",
             "Properties": {
@@ -327,7 +337,17 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Private Route Table"
+                        "Value": {
+                            "Fn::Join": [
+                                "",
+                                [
+                                    {
+                                        "Ref": "pmNamePrefix"
+                                    },
+                                    "-private-rtb"
+                                ]
+                            ]
+                        }
                     }
                 ]
             }
@@ -343,37 +363,13 @@
                 }
             }
         },
-        "DMZSG": {
+        "BastionSG": {
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "VpcId": {
                     "Ref": "VPC"
                 },
-                "GroupName": "DMZ-SG",
-                "GroupDescription": "Enable SSH access",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "22",
-                        "ToPort": "22",
-                        "CidrIp": "0.0.0.0/0"
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "DMZ-SG"
-                    }
-                ]
-            }
-        },
-        "WEBSG": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "GroupName": "WEB-SG",
+                "GroupName": "Bastion-SG",
                 "GroupDescription": "Enable SSH, HTTP, and HTTPS access",
                 "SecurityGroupIngress": [
                     {
@@ -398,68 +394,26 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "WEB-SG"
+                        "Value": "Bastion-SG"
                     }
                 ]
             }
         },
-        "DBSG": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "VPC"
-                },
-                "GroupName": "DB-SG",
-                "GroupDescription": "Enable SSH, and DB access",
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "3306",
-                        "ToPort": "3306",
-                        "SourceSecurityGroupId": {
-                            "Ref": "WEBSG"
-                        }
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "22",
-                        "ToPort": "22",
-                        "SourceSecurityGroupId": {
-                            "Ref": "WEBSG"
-                        }
-                    },
-                    {
-                        "IpProtocol": "tcp",
-                        "FromPort": "22",
-                        "ToPort": "22",
-                        "SourceSecurityGroupId": {
-                            "Ref": "DMZSG"
-                        }
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "DB-SG"
-                    }
-                ]
-            }
-        },
-        "EC2InstanceProfile": {
+        "BastionInstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "EC2InstanceRole"
+                        "Ref": "BastionInstanceRole"
                     }
                 ]
             }
         },
-        "EC2InstanceRole": {
+        "BastionInstanceRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
-                "RoleName": "POC-ACCESS",
+                "RoleName": "BASTION-ACCESS",
                 "AssumeRolePolicyDocument": {
                     "Version": "2012-10-17",
                     "Statement": [
@@ -482,24 +436,112 @@
                 ]
             }
         },
-        "DMZ": {
+        "BastionServer": {
             "Type": "AWS::EC2::Instance",
+            "Condition": "DeployBastion",
             "DependsOn": "IGWAttach",
+            "Metadata": {
+                "AWS::CloudFormation::Init": {
+                    "config": {
+                        "packages": {
+                            "yum": {
+                                "mysql": [],
+                                "telnet": [],
+                                "git": [],
+                                "zip": [],
+                                "unzip": [],
+                                "dos2unix": [],
+                                "tree": []
+                            },
+                            "python": {
+                                "boto3": [],
+                                "awscli": []
+                            }
+                        },
+                        "files": {
+                            "/root/.aws/config": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[default]",
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "pmVpcRegion"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "root",
+                                "group": "root"
+                            },
+                            "/home/ec2-user/.aws/config": {
+                                "content": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "[default]",
+                                            "\n",
+                                            "region=",
+                                            {
+                                                "Ref": "pmVpcRegion"
+                                            },
+                                            "\n"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000644",
+                                "owner": "ec2-user",
+                                "group": "ec2-user"
+                            },
+                            "/home/ec2-user/amazon-ssm-agent.rpm": {
+                                "source": {
+                                    "Fn::Join": [
+                                        "",
+                                        [
+                                            "https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm"
+                                        ]
+                                    ]
+                                },
+                                "mode": "000755",
+                                "owner": "root",
+                                "group": "root"
+                            }
+                        }
+                    },
+                    "commands": {
+                        "01_setup_aws_ssm_agent": {
+                            "command": {
+                                "Fn::Join": [
+                                    "",
+                                    [
+                                        "yum install -y /home/ec2-user/amazon-ssm-agent.rpm\n",
+                                        "# start amazon-ssm-agent\n"
+                                    ]
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
             "Properties": {
                 "InstanceType": {
-                    "Ref": "pmEc2InstanceType"
+                    "Ref": "pmBastionInstanceType"
                 },
                 "ImageId": {
-                    "Ref": "pmEc2ImageId"
+                    "Ref": "pmBastionImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
+                    "Ref": "pmBastionAccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
                         "GroupSet": [
                             {
-                                "Ref": "DMZSG"
+                                "Ref": "BastionSG"
                             }
                         ],
                         "AssociatePublicIpAddress": "true",
@@ -511,18 +553,28 @@
                     }
                 ],
                 "IamInstanceProfile": {
-                    "Ref": "EC2InstanceProfile"
+                    "Ref": "BastionInstanceProfile"
                 },
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [
                             "",
                             [
-                                "#!/bin/bash -v\n",
+                                "#!/bin/bash -xe\n",
                                 "yum update -y\n",
-                                "yum install -y aws-cli epel-release telnet unzip tree\n",
-                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
-                                "start amazon-ssm-agent\n"
+                                "yum install -y aws-cfn-bootstrap\n",
+                                "# Install the files and packages from the metadata\n",
+                                "/opt/aws/bin/cfn-init -v ",
+                                "         --stack ",
+                                {
+                                    "Ref": "AWS::StackName"
+                                },
+                                "         --resource BastionServer ",
+                                "         --region ",
+                                {
+                                    "Ref": "pmVpcRegion"
+                                },
+                                "\n"
                             ]
                         ]
                     }
@@ -530,123 +582,11 @@
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "DMZ"
+                        "Value": "BastionServer"
                     }
                 ]
             }
-        },
-        "WEB": {
-            "Type": "AWS::EC2::Instance",
-            "DependsOn": "NGW",
-            "Properties": {
-                "InstanceType": {
-                    "Ref": "pmEc2InstanceType"
-                },
-                "ImageId": {
-                    "Ref": "pmEc2ImageId"
-                },
-                "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
-                },
-                "NetworkInterfaces": [
-                    {
-                        "GroupSet": [
-                            {
-                                "Ref": "WEBSG"
-                            }
-                        ],
-                        "AssociatePublicIpAddress": "true",
-                        "DeviceIndex": "0",
-                        "DeleteOnTermination": "true",
-                        "SubnetId": {
-                            "Ref": "PublicSubnet"
-                        }
-                    }
-                ],
-                "IamInstanceProfile": {
-                    "Ref": "EC2InstanceProfile"
-                },
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "#!/bin/bash -v\n",
-                                "yum update -y\n",
-                                "yum install -y aws-cli httpd php php-mysql mysql telnet unzip tree git\n",
-                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
-                                "cp /var/www/noindex/index.html /var/www/html\n",
-                                "cp /var/www/noindex/index.html /var/www/html/apache.html\n",
-                                "service httpd start\n",
-                                "chkconfig httpd on\n",
-                                "start amazon-ssm-agent\n"
-                            ]
-                        ]
-                    }
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "WEB"
-                    }
-                ]
-            }
-        },
-        "DB": {
-            "Type": "AWS::EC2::Instance",
-            "DependsOn": "NGW",
-            "Properties": {
-                "InstanceType": {
-                    "Ref": "pmEc2InstanceType"
-                },
-                "ImageId": {
-                    "Ref": "pmEc2ImageId"
-                },
-                "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
-                },
-                "NetworkInterfaces": [
-                    {
-                        "GroupSet": [
-                            {
-                                "Ref": "DBSG"
-                            }
-                        ],
-                        "AssociatePublicIpAddress": "false",
-                        "DeviceIndex": "0",
-                        "DeleteOnTermination": "true",
-                        "SubnetId": {
-                            "Ref": "PrivateSubnet"
-                        }
-                    }
-                ],
-                "IamInstanceProfile": {
-                    "Ref": "EC2InstanceProfile"
-                },
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "",
-                            [
-                                "#!/bin/bash -v\n",
-                                "yum update -y\n",
-                                "yum install -y aws-cli telnet unzip tree mysql-server\n",
-                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
-                                "service mysqld start\n",
-                                "chkconfig mysqld on\n",
-                                "start amazon-ssm-agent\n"
-                            ]
-                        ]
-                    }
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": "DB"
-                    }
-                ]
-            }
-        },
+        }
     },
     "Outputs": {
         "VPC": {
@@ -659,19 +599,18 @@
                 "Ref": "IGW"
             }
         },
-        "NGW": {
+        "BastionServer": {
             "Value": {
-                "Ref": "NGW"
-            }
-        },
-        "DMZ": {
-            "Value": {
-                "Ref": "DMZ"
-            }
-        },
-        "WEB": {
-            "Value": {
-                "Ref": "WEB"
+                "Fn::If": [
+                    "DeployBastion",
+                    {
+                        "Fn::GetAtt": [
+                            "BastionServer",
+                            "PublicIp"
+                        ]
+                    },
+                    "AWS::NoValue"
+                ]
             }
         }
     }

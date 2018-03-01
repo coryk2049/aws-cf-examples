@@ -1,9 +1,78 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Deploy a VPC with 1 AZ, IGW, WebServer, ELB, ASG, SSM, and CodeDeploy agents.",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "Resource Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmNamePrefix"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "VPC Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmNamePrefix",
+                        "pmVpcRegion",
+                        "pmAz",
+                        "pmVpcCidr",
+                        "pmPubSubnetCidr"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "EC2 Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmEc2ImageId",
+                        "pmEc2InstanceType",
+                        "pmEc2VolumeSize",
+                        "pmEc2ServerCapacity",
+                        "pmEc2AccessKeyId"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "pmNamePrefix": {
+                    "default": "Enter resource name prefix"
+                },
+                "pmVpcCidr": {
+                    "default": "Enter VPC CIDR"
+                },
+                "pmVpcRegion": {
+                    "default": "Enter VPC region"
+                },
+                "pmAz": {
+                    "default": "Enter VPC AZ"
+                },
+                "pmPubSubnetCidr": {
+                    "default": "Enter VPC public subnet"
+                },
+                "pmEc2ImageId": {
+                    "default": "Enter EC2 image id"
+                },
+                "pmEc2InstanceType": {
+                    "default": "Enter EC2 instance type"
+                },
+                "pmEc2VolumeSize": {
+                    "default": "Enter EC2 volume size"
+                },
+                "pmEc2ServerCapacity": {
+                    "default": "Enter EC2 server capacity"
+                },
+                "pmEc2AccessKeyId": {
+                    "default": "Enter EC2 SSH access key"
+                }
+            }
+        }
+    },
     "Parameters": {
         "pmNamePrefix": {
-            "Description": "Prefix for resource tags made by this template (2-15 chars)",
             "Type": "String",
             "MaxLength": 15,
             "MinLength": 2,
@@ -11,50 +80,41 @@
             "Default": "bluegreen"
         },
         "pmVpcRegion": {
-            "Description": "VPC Region",
             "Type": "String",
             "Default": "us-east-1"
         },
         "pmVpcCidr": {
-            "Description": "VPC CIDR (e.g. 10.0.0.0/16)",
             "Type": "String",
             "Default": "10.0.0.0/16"
         },
         "pmPubSubnetCidr": {
-            "Description": "Public subnet CIDR (e.g. 10.0.10.0/24)",
             "Type": "String",
             "Default": "10.0.10.0/24"
         },
         "pmAz": {
-            "Description": "AZ for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1a"
         },
         "pmEc2ImageId": {
-            "Description": "EC2 Image Id",
             "Type": "String",
             "Default": "ami-28456852"
         },
         "pmEc2InstanceType": {
-            "Description": "EC2 instance type",
             "Type": "String",
             "Default": "t2.micro"
         },
         "pmEc2VolumeSize": {
-            "Description": "Volume size for EC2 instance type",
             "Type": "Number",
             "Default": "5"
         },
         "pmEc2ServerCapacity": {
-            "Description": "Initial number of server EC2 instances",
             "Type": "Number",
             "Default": "1",
             "MinValue": "1",
             "MaxValue": "4",
             "ConstraintDescription": "Must be between 1 and 4 server EC2 instances."
         },
-        "pmAccessKeyId": {
-            "Description": "Existing access key to enable SSH access to EC2 instance",
+        "pmEc2AccessKeyId": {
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
         }
@@ -665,7 +725,7 @@
                     "Ref": "pmEc2InstanceType"
                 },
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmEc2AccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -1054,7 +1114,7 @@
                 ],
                 "AssociatePublicIpAddress": "true",
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmEc2AccessKeyId"
                 },
                 "UserData": {
                     "Fn::Base64": {

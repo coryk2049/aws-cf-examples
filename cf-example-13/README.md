@@ -15,13 +15,13 @@ newVersion/appspec.yml
 newVersion/content/index.php
 newVersion/scripts/beforeInstall.sh
 ```
-- Source  ```scripts/setupAwsProfile```
-- Execute ```scripts/pushNewVersion.sh``` to push new source code bundle to S3 bucket but do not deploy as prompted
-- Execute ```scripts/updateDeploymentGroup.sh``` to prepare deployment of Green WebServer ASG when deploy in next step
+- Source  `scripts/setupAwsProfile`
+- Execute `scripts/pushNewVersion.sh` to push new source code bundle to S3 bucket but do not deploy as prompted
+- Execute `scripts/updateDeploymentGroup.sh` to prepare deployment of Green WebServer ASG when deploy in next step
 - CodeDeploy via AWS Management Console or AWS CLI instructions prompted earlier by the push script
 - Navigate to EC2 tab in AWS Management Console to monitor Green WebServer ASG being spun up
 - Point browser to ELB DNS name to view new version (e.g. version 2.0) of web page deployed
-- Execute ```scripts/cleanup.sh``` to remove deployment bundle from S3 bucket, and both ASGs
+- Execute `scripts/cleanup.sh` to remove deployment bundle from S3 bucket, and both ASGs
 ```
 # Check ASG deployment status
 aws autoscaling describe-auto-scaling-groups \

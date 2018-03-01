@@ -1,123 +1,6 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Deploy 2 VPC with 2 AZ, IGW, WebServers, and VPC Peering.",
-    "Metadata": {
-        "AWS::CloudFormation::Interface": {
-            "ParameterGroups": [
-                {
-                    "Label": {
-                        "default": "VPC1 Configuration Parameters"
-                    },
-                    "Parameters": [
-                        "pmSite1VpcId",
-                        "pmSite1VpcRegion",
-                        "pmSite1Az1",
-                        "pmSite1Az2",
-                        "pmSite1VpcCidr",
-                        "pmSite1PubSubnetCidr1",
-                        "pmSite1PubSubnetCidr2",
-                        "pmSite1PriSubnetCidr1",
-                        "pmSite1PriSubnetCidr2"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "VPC2 Configuration Parameters"
-                    },
-                    "Parameters": [
-                        "pmSite2VpcId",
-                        "pmSite2VpcRegion",
-                        "pmSite2Az1",
-                        "pmSite2Az2",
-                        "pmSite2VpcCidr",
-                        "pmSite2PubSubnetCidr1",
-                        "pmSite2PubSubnetCidr2",
-                        "pmSite2PriSubnetCidr1",
-                        "pmSite2PriSubnetCidr2"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "EC2 Configuration Parameters"
-                    },
-                    "Parameters": [
-                        "pmEc2ImageId",
-                        "pmEc2InstanceType",
-                        "pmEc2VolumeSize",
-                        "pmEc2AccessKeyId"
-                    ]
-                }
-            ],
-            "ParameterLabels": {
-                "pmSite1VpcId": {
-                    "default": "Enter VPC1 id"
-                },
-                "pmSite1VpcRegion": {
-                    "default": "Enter VPC1 region"
-                },
-                "pmSite1Az1": {
-                    "default": "Enter VPC1 AZ1"
-                },
-                "pmSite1Az2": {
-                    "default": "Enter VPC1 AZ2"
-                },
-                "pmSite1VpcCidr": {
-                    "default": "Enter VPC1 CIDR"
-                },
-                "pmSite1PubSubnetCidr1": {
-                    "default": "Enter VPC1 public subnet1"
-                },
-                "pmSite1PubSubnetCidr2": {
-                    "default": "Enter VPC1 public subnet2"
-                },
-                "pmSite1PriSubnetCidr1": {
-                    "default": "Enter VPC1 private subnet1"
-                },
-                "pmSite1PriSubnetCidr2": {
-                    "default": "Enter VPC1 private subnet2"
-                },
-                "pmSite2VpcId": {
-                    "default": "Enter VPC2 id"
-                },
-                "pmSite2VpcRegion": {
-                    "default": "Enter VPC2 region"
-                },
-                "pmSite2Az1": {
-                    "default": "Enter VPC2 AZ1"
-                },
-                "pmSite2Az2": {
-                    "default": "Enter VPC2 AZ2"
-                },
-                "pmSite2VpcCidr": {
-                    "default": "Enter VPC2 CIDR"
-                },
-                "pmSite2PubSubnetCidr1": {
-                    "default": "Enter VPC2 public subnet1"
-                },
-                "pmSite2PubSubnetCidr2": {
-                    "default": "Enter VPC2 public subnet2"
-                },
-                "pmSite2PriSubnetCidr1": {
-                    "default": "Enter VPC2 private subnet1"
-                },
-                "pmSite2PriSubnetCidr2": {
-                    "default": "Enter VPC2 private subnet2"
-                },
-                "pmEc2ImageId": {
-                    "default": "Enter EC2 image id"
-                },
-                "pmEc2InstanceType": {
-                    "default": "Enter EC2 instance type"
-                },
-                "pmEc2VolumeSize": {
-                    "default": "Enter EC2 volume size"
-                },
-                "pmEc2AccessKeyId": {
-                    "default": "Enter EC2 SSH access key"
-                }
-            }
-        }
-    },
+    "Description": "Deploy multiple VPC with 2 AZ, Jump Boxes, and WebServers (Unoptimized)",
     "Parameters": {
         "pmSite1VpcId": {
             "Type": "String",
@@ -191,6 +74,42 @@
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1b"
         },
+        "pmSite3VpcId": {
+            "Type": "String",
+            "Default": "PREPROD"
+        },
+        "pmSite3VpcRegion": {
+            "Type": "String",
+            "Default": "us-east-1"
+        },
+        "pmSite3VpcCidr": {
+            "Type": "String",
+            "Default": "10.105.0.0/16"
+        },
+        "pmSite3PubSubnetCidr1": {
+            "Type": "String",
+            "Default": "10.106.1.0/24"
+        },
+        "pmSite3PubSubnetCidr2": {
+            "Type": "String",
+            "Default": "10.106.2.0/24"
+        },
+        "pmSite3PriSubnetCidr1": {
+            "Type": "String",
+            "Default": "10.106.10.0/24"
+        },
+        "pmSite3PriSubnetCidr2": {
+            "Type": "String",
+            "Default": "10.106.12.0/24"
+        },
+        "pmSite3Az1": {
+            "Type": "AWS::EC2::AvailabilityZone::Name",
+            "Default": "us-east-1a"
+        },
+        "pmSite3Az2": {
+            "Type": "AWS::EC2::AvailabilityZone::Name",
+            "Default": "us-east-1b"
+        },
         "pmEc2ImageId": {
             "Type": "String",
             "Default": "ami-28456852"
@@ -203,7 +122,7 @@
             "Type": "Number",
             "Default": "5"
         },
-        "pmEc2AccessKeyId": {
+        "pmAccessKeyId": {
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
         }
@@ -246,19 +165,20 @@
                 ]
             }
         },
-        "Site1ToSite2VPCConnect": {
-            "Type": "AWS::EC2::VPCPeeringConnection",
+        "Site3VPC": {
+            "Type": "AWS::EC2::VPC",
             "Properties": {
-                "VpcId": {
-                    "Ref": "Site1VPC"
+                "CidrBlock": {
+                    "Ref": "pmSite3VpcCidr"
                 },
-                "PeerVpcId": {
-                    "Ref": "Site2VPC"
-                },
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true",
                 "Tags": [
                     {
                         "Key": "Name",
-                        "Value": "Site1-To-Site2"
+                        "Value": {
+                            "Ref": "pmSite3VpcId"
+                        }
                     }
                 ]
             }
@@ -324,6 +244,38 @@
                 },
                 "InternetGatewayId": {
                     "Ref": "Site2IGW"
+                }
+            }
+        },
+        "Site3IGW": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmSite3VpcId"
+                                    },
+                                    "IGW"
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Site3IGWAttach": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "Site3IGW"
                 }
             }
         },
@@ -785,59 +737,232 @@
                 }
             }
         },
-        "Site1PeeringRoutePublic": {
-            "Type": "AWS::EC2::Route",
+        "Site3PublicSubnet1": {
+            "Type": "AWS::EC2::Subnet",
             "Properties": {
-                "DestinationCidrBlock": {
-                    "Ref": "pmSite2VpcCidr"
+                "VpcId": {
+                    "Ref": "Site3VPC"
                 },
+                "CidrBlock": {
+                    "Ref": "pmSite3PubSubnetCidr1"
+                },
+                "AvailabilityZone": {
+                    "Ref": "pmSite3Az1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "Value": "Public"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmSite3PubSubnetCidr1"
+                                    },
+                                    {
+                                        "Ref": "pmSite3Az1"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Site3PrivateSubnet1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pmSite3PriSubnetCidr1"
+                },
+                "AvailabilityZone": {
+                    "Ref": "pmSite3Az1"
+                },
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "Value": "Private"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmSite3PriSubnetCidr1"
+                                    },
+                                    {
+                                        "Ref": "pmSite3Az1"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Site3PublicSubnet2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pmSite3PubSubnetCidr2"
+                },
+                "AvailabilityZone": {
+                    "Ref": "pmSite3Az2"
+                },
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "Value": "Public"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmSite3PubSubnetCidr2"
+                                    },
+                                    {
+                                        "Ref": "pmSite3Az2"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Site3PrivateSubnet2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "CidrBlock": {
+                    "Ref": "pmSite3PriSubnetCidr2"
+                },
+                "AvailabilityZone": {
+                    "Ref": "pmSite3Az2"
+                },
+                "Tags": [
+                    {
+                        "Key": "Type",
+                        "Value": "Private"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Fn::Join": [
+                                "|",
+                                [
+                                    {
+                                        "Ref": "pmSite3PriSubnetCidr2"
+                                    },
+                                    {
+                                        "Ref": "pmSite3Az2"
+                                    }
+                                ]
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "Site3PublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Public Route Table"
+                    }
+                ]
+            }
+        },
+        "Site3PublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": "Site3IGWAttach",
+            "Properties": {
                 "RouteTableId": {
-                    "Ref": "Site1PublicRouteTable"
+                    "Ref": "Site3PublicRouteTable"
                 },
-                "VpcPeeringConnectionId": {
-                    "Ref": "Site1ToSite2VPCConnect"
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "Site3IGW"
                 }
             }
         },
-        "Site1PeeringRoutePrivate": {
-            "Type": "AWS::EC2::Route",
+        "Site3PublicSubnet1RouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
-                "DestinationCidrBlock": {
-                    "Ref": "pmSite2VpcCidr"
+                "SubnetId": {
+                    "Ref": "Site3PublicSubnet1"
                 },
                 "RouteTableId": {
-                    "Ref": "Site1PrivateRouteTable"
-                },
-                "VpcPeeringConnectionId": {
-                    "Ref": "Site1ToSite2VPCConnect"
+                    "Ref": "Site3PublicRouteTable"
                 }
             }
         },
-        "Site2PeeringRoutePublic": {
-            "Type": "AWS::EC2::Route",
+        "Site3PublicSubnet2RouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
             "Properties": {
-                "DestinationCidrBlock": {
-                    "Ref": "pmSite1VpcCidr"
+                "SubnetId": {
+                    "Ref": "Site3PublicSubnet2"
                 },
                 "RouteTableId": {
-                    "Ref": "Site2PublicRouteTable"
-                },
-                "VpcPeeringConnectionId": {
-                    "Ref": "Site1ToSite2VPCConnect"
+                    "Ref": "Site3PublicRouteTable"
                 }
             }
         },
-        "Site2PeeringRoutePrivate": {
-            "Type": "AWS::EC2::Route",
+        "Site3PrivateRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
             "Properties": {
-                "DestinationCidrBlock": {
-                    "Ref": "pmSite1VpcCidr"
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Private Route Table"
+                    }
+                ]
+            }
+        },
+        "Site3PrivateSubnet1RouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "Site3PrivateSubnet1"
                 },
                 "RouteTableId": {
-                    "Ref": "Site2PrivateRouteTable"
+                    "Ref": "Site3PrivateRouteTable"
+                }
+            }
+        },
+        "Site3PrivateSubnet2RouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "Site3PrivateSubnet2"
                 },
-                "VpcPeeringConnectionId": {
-                    "Ref": "Site1ToSite2VPCConnect"
+                "RouteTableId": {
+                    "Ref": "Site3PrivateRouteTable"
                 }
             }
         },
@@ -857,9 +982,15 @@
                         "CidrIp": "0.0.0.0/0"
                     },
                     {
-                        "IpProtocol": "icmp",
-                        "FromPort": "8",
-                        "ToPort": "-1",
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
                         "CidrIp": "0.0.0.0/0"
                     }
                 ],
@@ -897,11 +1028,41 @@
                         "FromPort": "443",
                         "ToPort": "443",
                         "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "WEB-SG"
+                    }
+                ]
+            }
+        },
+        "Site3SG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "Site3VPC"
+                },
+                "GroupName": "WEB-SG",
+                "GroupDescription": "Enable SSH, HTTP, and HTTPS access",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
                     },
                     {
-                        "IpProtocol": "icmp",
-                        "FromPort": "8",
-                        "ToPort": "-1",
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
                         "CidrIp": "0.0.0.0/0"
                     }
                 ],
@@ -913,7 +1074,18 @@
                 ]
             }
         },
-        "SiteXEC2InstanceRole": {
+        "Site1EC2InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "Site1EC2InstanceRole"
+                    }
+                ]
+            }
+        },
+        "Site1EC2InstanceRole": {
             "Type": "AWS::IAM::Role",
             "Properties": {
                 "RoleName": "POC-ACCESS",
@@ -939,14 +1111,77 @@
                 ]
             }
         },
-        "SiteXEC2InstanceProfile": {
+        "Site2EC2InstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
                 "Path": "/",
                 "Roles": [
                     {
-                        "Ref": "SiteXEC2InstanceRole"
+                        "Ref": "Site2EC2InstanceRole"
                     }
+                ]
+            }
+        },
+        "Site2EC2InstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "POC-ACCESS",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ec2.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+                    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+                    "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+                    "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
+                ]
+            }
+        },
+        "Site3EC2InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "Site3EC2InstanceRole"
+                    }
+                ]
+            }
+        },
+        "Site3EC2InstanceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "POC-ACCESS",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ec2.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
+                    "arn:aws:iam::aws:policy/AmazonS3FullAccess",
+                    "arn:aws:iam::aws:policy/AWSLambdaFullAccess",
+                    "arn:aws:iam::aws:policy/AmazonSSMFullAccess",
+                    "arn:aws:iam::aws:policy/IAMReadOnlyAccess"
                 ]
             }
         },
@@ -961,7 +1196,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
+                    "Ref": "pmAccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -979,7 +1214,7 @@
                     }
                 ],
                 "IamInstanceProfile": {
-                    "Ref": "SiteXEC2InstanceProfile"
+                    "Ref": "Site1EC2InstanceProfile"
                 },
                 "UserData": {
                     "Fn::Base64": {
@@ -1014,7 +1249,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
+                    "Ref": "pmAccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -1032,7 +1267,7 @@
                     }
                 ],
                 "IamInstanceProfile": {
-                    "Ref": "SiteXEC2InstanceProfile"
+                    "Ref": "Site1EC2InstanceProfile"
                 },
                 "UserData": {
                     "Fn::Base64": {
@@ -1067,7 +1302,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
+                    "Ref": "pmAccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -1085,7 +1320,7 @@
                     }
                 ],
                 "IamInstanceProfile": {
-                    "Ref": "SiteXEC2InstanceProfile"
+                    "Ref": "Site2EC2InstanceProfile"
                 },
                 "UserData": {
                     "Fn::Base64": {
@@ -1123,7 +1358,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmEc2AccessKeyId"
+                    "Ref": "pmAccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -1141,7 +1376,120 @@
                     }
                 ],
                 "IamInstanceProfile": {
-                    "Ref": "SiteXEC2InstanceProfile"
+                    "Ref": "Site2EC2InstanceProfile"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -v\n",
+                                "yum update -y\n",
+                                "yum install -y aws-cli httpd24 php56\n",
+                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
+                                "start amazon-ssm-agent\n",
+                                "cp /var/www/noindex/index.html /var/www/html\n",
+                                "cp /var/www/noindex/index.html /var/www/html/apache.html\n",
+                                "service httpd start\n",
+                                "chkconfig httpd on\n"
+                            ]
+                        ]
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "WEB-2"
+                    }
+                ]
+            }
+        },
+        "Site3EC2Instance1": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn": "Site3IGWAttach",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "pmEc2InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "pmEc2ImageId"
+                },
+                "KeyName": {
+                    "Ref": "pmAccessKeyId"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": [
+                            {
+                                "Ref": "Site3SG"
+                            }
+                        ],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+                            "Ref": "Site3PublicSubnet1"
+                        }
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "Site3EC2InstanceProfile"
+                },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [
+                            "",
+                            [
+                                "#!/bin/bash -v\n",
+                                "yum update -y\n",
+                                "yum install -y aws-cli nginx unzip tree git\n",
+                                "yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_386/amazon-ssm-agent.rpm\n",
+                                "start amazon-ssm-agent\n",
+                                "service nginx start\n",
+                                "cp /usr/share/nginx/html/index.html /usr/share/nginx/html/nginx.html\n",
+                                "chkconfig nginx on\n"
+                            ]
+                        ]
+                    }
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "WEB-1"
+                    }
+                ]
+            }
+        },
+        "Site3EC2Instance2": {
+            "Type": "AWS::EC2::Instance",
+            "DependsOn": "Site3IGWAttach",
+            "Properties": {
+                "InstanceType": {
+                    "Ref": "pmEc2InstanceType"
+                },
+                "ImageId": {
+                    "Ref": "pmEc2ImageId"
+                },
+                "KeyName": {
+                    "Ref": "pmAccessKeyId"
+                },
+                "NetworkInterfaces": [
+                    {
+                        "GroupSet": [
+                            {
+                                "Ref": "Site3SG"
+                            }
+                        ],
+                        "AssociatePublicIpAddress": "true",
+                        "DeviceIndex": "0",
+                        "DeleteOnTermination": "true",
+                        "SubnetId": {
+                            "Ref": "Site3PublicSubnet2"
+                        }
+                    }
+                ],
+                "IamInstanceProfile": {
+                    "Ref": "Site3EC2InstanceProfile"
                 },
                 "UserData": {
                     "Fn::Base64": {
@@ -1209,6 +1557,26 @@
         "Site2EC2Instance2": {
             "Value": {
                 "Ref": "Site2EC2Instance2"
+            }
+        },
+        "Site3VPC": {
+            "Value": {
+                "Ref": "Site3VPC"
+            }
+        },
+        "Site3IGW": {
+            "Value": {
+                "Ref": "Site3IGW"
+            }
+        },
+        "Site3EC2Instance1": {
+            "Value": {
+                "Ref": "Site3EC2Instance1"
+            }
+        },
+        "Site3EC2Instance2": {
+            "Value": {
+                "Ref": "Site3EC2Instance2"
             }
         }
     }

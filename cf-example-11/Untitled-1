@@ -1,0 +1,207 @@
+GET _ingest/pipeline/_simulate
+{
+  "pipeline": {
+    "processors": [
+      {
+        "grok": {
+          "field": "record",
+          "patterns": [
+            "%{WORD:process_id},%{DATA:component_id},%{DATA:transaction_id},%{DATA:session_id},%{DATA:event_timestamp},%{DATA:event_type},%{DATA:division_id},%{DATA:group_id},%{DATA:subscriber_id},%{DATA:subscriber_type},%{DATA:device_id},%{DATA:plan_id},%{DATA:notification_type},%{DATA:notification_address},%{DATA:usage},%{DATA:charge_amount},"
+          ]
+        },
+        "date": {
+          "field": "event_timestamp",
+          "formats": [
+            "YYYY/MM/dd HH:mm:ss.SSS"
+          ]
+        }
+      }
+    ]
+  },
+  "docs": [
+    {
+      "_source": {
+        "record": "PROCESS_2,COMPONENT_3,1483246806760981.93,Gx.1483246806761074,2017/01/01 00:00:06.760981,FAIR_USAGE_POLICY,B25,BUSG_461,0255583520994098,BUS,4043494317,BUS_PLAN_X,EMAIL,0255583520994098@bus-example.com,762314752,72.700,"
+      }
+    }
+  ]
+}
+
+
+
+GET _ingest/pipeline/_simulate
+{
+  "pipeline": {
+    "processors": [
+      {
+        "grok": {
+          "field": "record",
+          "patterns": [
+            "%{DATA:process_id},%{DATA:component_id},%{DATA:transaction_id},%{DATA:session_id},%{DATA:event_timestamp},%{DATA:event_type},%{DATA:division_id},%{DATA:group_id},%{DATA:subscriber_id},%{DATA:subscriber_type},%{DATA:device_id},%{DATA:plan_id},%{DATA:notification_type},%{DATA:notification_address},%{DATA:usage},%{DATA:charge_amount},"
+          ]
+        },
+        "date": {
+          "field": "event_timestamp",
+          "target_field": "timestamp",
+          "formats" : ["yyyy-MM-dd HH:mm:ss"]
+          }
+      }
+    ]
+  },
+  "docs": [
+    {
+      "_source": {
+        "record": "PROCESS_2,COMPONENT_3,1483246806760981.93,Gx.1483246806761074,2017-02-07 10:53:22,FAIR_USAGE_POLICY,B25,BUSG_461,0255583520994098,BUS,4043494317,BUS_PLAN_X,EMAIL,0255583520994098@bus-example.com,762314752,72.700,"
+      }
+    }
+  ]
+}
+
+
+
+curl -k -XPOST "https://localhost:9200/_ingest/pipeline/_simulate" -d'
+{
+  "pipeline": {
+    "processors" : [
+      {
+        "date": {
+          "field": "my_date",
+          "formats": ["yyyy-MM-dd'\''T'\''HH:mm:ss"]
+        }
+      }
+    ]
+  },
+  "docs": [
+    {
+      "_source": {
+        "my_date": "2017-02-07T10:53:22"
+      }
+    }
+  ]
+}'
+
+
+GET _ingest/pipeline/_simulate
+{
+  "pipeline": {
+    "processors": [
+      {
+        "grok": {
+          "field": "record",
+          "patterns": [
+            "%{DATA:process_id},%{DATA:component_id},%{DATA:transaction_id},%{DATA:session_id},%{TIMESTAMP_ISO8601:event_timestamp},%{DATA:event_type},%{DATA:division_id},%{DATA:group_id},%{DATA:subscriber_id},%{DATA:subscriber_type},%{DATA:device_id},%{DATA:plan_id},%{DATA:notification_type},%{DATA:notification_address},%{DATA:usage},%{DATA:charge_amount},"
+          ]
+        },
+        "date": {
+          "field": "event_timestamp",
+          "formats" : ["yyyy-MM-dd'T'HH:mm:ss"]
+          }
+      }
+    ]
+    },
+  "docs": [
+    {
+      "_source": {
+        "record": "PROCESS_2,COMPONENT_3,1483246806760981.93,Gx.1483246806761074,2017-02-05T15:55:38,FAIR_USAGE_POLICY,B25,BUSG_461,0255583520994098,BUS,4043494317,BUS_PLAN_X,EMAIL,0255583520994098@bus-example.com,762314752,72.700,"
+      }
+    }
+  ]
+}
+
+
+
+
+
+
+
+
+curl -k -XPOST "https://localhost:9200/_ingest/pipeline/_simulate" -d'
+{
+  "pipeline": {
+    "processors": [
+      {
+        "grok": {
+          "field": "record",
+          "patterns": [
+            "%{DATA:process_id},%{DATA:component_id},%{DATA:transaction_id},%{DATA:session_id},%{TIMESTAMP_ISO8601:event_timestamp},%{DATA:event_type},%{DATA:division_id},%{DATA:group_id},%{DATA:subscriber_id},%{DATA:subscriber_type},%{DATA:device_id},%{DATA:plan_id},%{DATA:notification_type},%{DATA:notification_address},%{DATA:usage},%{DATA:charge_amount},"
+          ]
+        },
+        "date": {
+          "field": "event_timestamp",
+          "formats": ["yyyy-MM-dd'\''T'\''HH:mm:ss"]
+          }
+      }
+    ]
+    },
+  "docs": [
+    {
+      "_source": {
+        "record": "PROCESS_2,COMPONENT_3,1483246806760981.93,Gx.1483246806761074,2017-02-05T15:55:38+01:00,FAIR_USAGE_POLICY,B25,BUSG_461,0255583520994098,BUS,4043494317,BUS_PLAN_X,EMAIL,0255583520994098@bus-example.com,762314752,72.700,"
+      }
+    }
+  ]
+}'
+
+
+
+
+
+GET _ingest/pipeline/_simulate
+{
+  "pipeline": {
+    "processors": [
+      {
+        "grok": {
+          "field": "record",
+          "patterns": [
+            "%{DATA:process_id},%{DATA:component_id},%{DATA:transaction_id},%{DATA:session_id},%{TIMESTAMP_ISO8601:event_timestamp},%{DATA:event_type},%{DATA:division_id},%{DATA:group_id},%{DATA:subscriber_id},%{DATA:subscriber_type},%{DATA:device_id},%{DATA:plan_id},%{DATA:notification_type},%{DATA:notification_address},%{DATA:usage},%{DATA:charge_amount},"
+          ]
+        }
+      }
+    ]
+    },
+  "docs": [
+    {
+      "_source": {
+        "record": "PROCESS_2,COMPONENT_3,1483246806760981.93,Gx.1483246806761074,2017-02-05T15:55:38+01:00,FAIR_USAGE_POLICY,B25,BUSG_461,0255583520994098,BUS,4043494317,BUS_PLAN_X,EMAIL,0255583520994098@bus-example.com,762314752,72.700,"
+      }
+    }
+  ]
+}
+
+{
+  "docs": [
+    {
+      "doc": {
+        "_index": "_index",
+        "_type": "_type",
+        "_id": "_id",
+        "_source": {
+          "transaction_id": "1483246806760981.93",
+          "notification_type": "EMAIL",
+          "process_id": "PROCESS_2",
+          "component_id": "COMPONENT_3",
+          "device_id": "4043494317",
+          "usage": "762314752",
+          "session_id": "Gx.1483246806761074",
+          "division_id": "B25",
+          "notification_address": "0255583520994098@bus-example.com",
+          "event_timestamp": "2017-02-05T15:55:38+01:00",
+          "subscriber_type": "BUS",
+          "event_type": "FAIR_USAGE_POLICY",
+          "subscriber_id": "0255583520994098",
+          "group_id": "BUSG_461",
+          "record": "PROCESS_2,COMPONENT_3,1483246806760981.93,Gx.1483246806761074,2017-02-05T15:55:38+01:00,FAIR_USAGE_POLICY,B25,BUSG_461,0255583520994098,BUS,4043494317,BUS_PLAN_X,EMAIL,0255583520994098@bus-example.com,762314752,72.700,",
+          "plan_id": "BUS_PLAN_X",
+          "charge_amount": "72.700"
+        },
+        "_ingest": {
+          "timestamp": "2018-02-09T02:47:56.704Z"
+        }
+      }
+    }
+  ]
+}
+
+
+

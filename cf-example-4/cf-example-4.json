@@ -1,54 +1,118 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Deploy a VPC with 2 AZ, IGW, WebServers, and ALB",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "VPC Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmVpcId",
+                        "pmVpcRegion",
+                        "pmAz1",
+                        "pmAz2",
+                        "pmVpcCidr",
+                        "pmPubSubnetCidr1",
+                        "pmPubSubnetCidr2",
+                        "pmPriSubnetCidr1",
+                        "pmPriSubnetCidr2"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "EC2 Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmEc2ImageId",
+                        "pmEc2InstanceType",
+                        "pmEc2VolumeSize",
+                        "pmAccessKeyId"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "pmVpcId": {
+                    "default": "Enter VPC id"
+                },
+                "pmVpcCidr": {
+                    "default": "Enter VPC CIDR"
+                },
+                "pmVpcRegion": {
+                    "default": "Enter VPC region"
+                },
+                "pmAz1": {
+                    "default": "Enter VPC AZ1"
+                },
+                "pmAz2": {
+                    "default": "Enter VPC AZ2"
+                },
+                "pmPubSubnetCidr1": {
+                    "default": "Enter VPC public subnet1"
+                },
+                "pmPubSubnetCidr2": {
+                    "default": "Enter VPC public subnet2"
+                },
+                "pmPriSubnetCidr1": {
+                    "default": "Enter VPC private subnet1"
+                },
+                "pmPriSubnetCidr2": {
+                    "default": "Enter VPC private subnet2"
+                },
+                "pmEc2ImageId": {
+                    "default": "Enter EC2 image id"
+                },
+                "pmEc2InstanceType": {
+                    "default": "Enter EC2 instance type"
+                },
+                "pmEc2VolumeSize": {
+                    "default": "Enter EC2 volume size"
+                },
+                "pmAccessKeyId": {
+                    "default": "Enter EC2 SSH access key"
+                }
+            }
+        }
+    },
     "Parameters": {
         "pmVpcId": {
-            "Description": "VPC Id (e.g. POC)",
             "Type": "String",
             "Default": "POC"
         },
         "pmVpcRegion": {
-            "Description": "VPC Region",
             "Type": "String",
             "Default": "us-east-1"
         },
         "pmVpcCidr": {
-            "Description": "VPC CIDR (e.g. 10.0.0.0/16)",
             "Type": "String",
             "Default": "10.0.0.0/16"
         },
         "pmPubSubnetCidr1": {
-            "Description": "Public subnet CIDR 1 (e.g. 10.0.10.0/24)",
             "Type": "String",
             "Default": "10.0.10.0/24"
         },
         "pmPubSubnetCidr2": {
-            "Description": "Public subnet CIDR 2 (e.g. 10.0.20.0/24)",
             "Type": "String",
             "Default": "10.0.20.0/24"
         },
         "pmPriSubnetCidr1": {
-            "Description": "Private subnet CIDR 1 (e.g. 10.0.50.0/24)",
             "Type": "String",
             "Default": "10.0.50.0/24"
         },
         "pmPriSubnetCidr2": {
-            "Description": "Private subnet CIDR 2 (e.g. 10.0.60.0/24)",
             "Type": "String",
             "Default": "10.0.60.0/24"
         },
         "pmAz1": {
-            "Description": "AZ 1 for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1a"
         },
         "pmAz2": {
-            "Description": "AZ 2 for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1b"
         },
         "pmEc2ImageId": {
-            "Description": "EC2 Image Id",
             "Type": "String",
             "Default": "ami-28456852",
             "AllowedValues": [
@@ -59,7 +123,6 @@
             "ConstraintDescription": "Must be a valid EC2 image id"
         },
         "pmEc2InstanceType": {
-            "Description": "EC2 instance type",
             "Type": "String",
             "Default": "t2.micro",
             "AllowedValues": [
@@ -70,7 +133,6 @@
             "ConstraintDescription": "Must be a valid EC2 instance type"
         },
         "pmEc2VolumeSize": {
-            "Description": "Volume size for EC2 instance type",
             "Type": "Number",
             "Default": "10",
             "MinValue": "5",
@@ -78,7 +140,6 @@
             "ConstraintDescription": "Must be between 5 and 1024 Gb"
         },
         "pmAccessKeyId": {
-            "Description": "Existing access key to enable SSH access to EC2 instance",
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
         }
