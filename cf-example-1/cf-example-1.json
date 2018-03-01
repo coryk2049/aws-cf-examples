@@ -1,67 +1,34 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Deploy a VPC with 1 AZ",
-    "Metadata": {
-        "AWS::CloudFormation::Interface": {
-            "ParameterGroups": [
-                {
-                    "Label": {
-                        "default": "VPC Configuration Parameters"
-                    },
-                    "Parameters": [
-                        "pmVpcId",
-                        "pmVpcRegion",
-                        "pmAz",
-                        "pmVpcCidr",
-                        "pmPubSubnetCidr",
-                        "pmPriSubnetCidr"
-                    ]
-                }
-            ],
-            "ParameterLabels": {
-                "pmVpcId": {
-                    "default": "Enter VPC id"
-                },
-                "pmVpcRegion": {
-                    "default": "Enter VPC region"
-                },
-                "pmAz": {
-                    "default": "Enter VPC AZ"
-                },
-                "pmVpcCidr": {
-                    "default": "Enter VPC CIDR"
-                },
-                "pmPubSubnetCidr": {
-                    "default": "Enter VPC public subnet"
-                },
-                "pmPriSubnetCidr": {
-                    "default": "Enter VPC private subnet"
-                }
-            }
-        }
-    },
     "Parameters": {
         "pmVpcId": {
+            "Description": "VPC Id (e.g. POC)",
             "Type": "String",
             "Default": "POC"
         },
         "pmVpcRegion": {
+            "Description": "VPC Region",
             "Type": "String",
             "Default": "us-east-1"
         },
         "pmVpcCidr": {
+            "Description": "VPC CIDR (e.g. 10.0.0.0/16)",
             "Type": "String",
             "Default": "10.0.0.0/16"
         },
         "pmPubSubnetCidr": {
+            "Description": "Public subnet CIDR (e.g. 10.0.10.0/24)",
             "Type": "String",
             "Default": "10.0.10.0/24"
         },
         "pmPriSubnetCidr": {
+            "Description": "Private subnet CIDR (e.g. 10.0.50.0/24)",
             "Type": "String",
             "Default": "10.0.50.0/24"
         },
         "pmAz": {
+            "Description": "AZ for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1a"
         }

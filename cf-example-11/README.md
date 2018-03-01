@@ -18,7 +18,7 @@ HostName <MY-EC2-PUBLIC-IP-ADDRESS>
 User ec2-user
 IdentitiesOnly yes
 IdentityFile ~/.ssh/<MY-AWS-ACCESS-KEY>.pem
-LocalForward 9200 <MY-ES-END-POINT>:443
+LocalForward 9200 <MY-ES-VPC-END-POINT>:443
 ```
 
 ### Execute ES tunnel
@@ -43,4 +43,7 @@ Refer to JSON test files:
 ```
 
 ### References
-- https://www.jeremydaly.com/access-aws-vpc-based-elasticsearch-cluster-locally/
+ES SSH tunnel tip:
+```
+https://www.jeremydaly.com/access-aws-vpc-based-elasticsearch-cluster-locally/
+```
