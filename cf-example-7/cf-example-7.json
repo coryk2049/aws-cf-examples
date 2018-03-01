@@ -1,54 +1,157 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Deploy a VPC with 2 AZ, IGW, Web, PhP, ALB, ASG, and RDS.",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "VPC Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmVpcId",
+                        "pmVpcRegion",
+                        "pmAz1",
+                        "pmAz2",
+                        "pmVpcCidr",
+                        "pmPubSubnetCidr1",
+                        "pmPubSubnetCidr2",
+                        "pmPriSubnetCidr1",
+                        "pmPriSubnetCidr2"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "WebServer/EC2 Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmWebServerImageId",
+                        "pmWebServerInstanceType",
+                        "pmWebServerVolumeSize",
+                        "pmWebServerCapacity",
+                        "pmWebServerAccessKeyId"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "RDS/MySQL Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmDBInstanceName",
+                        "pmDBInstanceClass",
+                        "pmDBStorage",
+                        "pmDBMultiAz",
+                        "pmDBName",
+                        "pmDBUsername",
+                        "pmDBPassword"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "pmVpcId": {
+                    "default": "Enter VPC id"
+                },
+                "pmVpcCidr": {
+                    "default": "Enter VPC CIDR"
+                },
+                "pmVpcRegion": {
+                    "default": "Enter VPC region"
+                },
+                "pmAz1": {
+                    "default": "Enter VPC AZ1"
+                },
+                "pmAz2": {
+                    "default": "Enter VPC AZ2"
+                },
+                "pmPubSubnetCidr1": {
+                    "default": "Enter VPC public subnet1"
+                },
+                "pmPubSubnetCidr2": {
+                    "default": "Enter VPC public subnet2"
+                },
+                "pmPriSubnetCidr1": {
+                    "default": "Enter VPC private subnet1"
+                },
+                "pmPriSubnetCidr2": {
+                    "default": "Enter VPC private subnet2"
+                },
+                "pmWebServerImageId": {
+                    "default": "Enter EC2 image id"
+                },
+                "pmWebServerInstanceType": {
+                    "default": "Enter EC2 instance type"
+                },
+                "pmWebServerVolumeSize": {
+                    "default": "Enter EC2 volume size"
+                },
+                "pmWebServerCapacity": {
+                    "default": "Enter EC2 capacity"
+                },
+                "pmWebServerAccessKeyId": {
+                    "default": "Enter EC2 SSH access key"
+                },
+                "pmDBInstanceName": {
+                    "default": "Enter DB instance name"
+                },
+                "pmDBInstanceClass": {
+                    "default": "Enter DB instance class"
+                },
+                "pmDBStorage": {
+                    "default": "Enter DB storage size"
+                },
+                "pmDBMultiAz": {
+                    "default": "Enter DB Multi AZ support"
+                },
+                "pmDBName": {
+                    "default": "Enter DB name"
+                },
+                "pmDBUsername": {
+                    "default": "Enter DB username"
+                },
+                "pmDBPassword": {
+                    "default": "Enter DB password"
+                }
+            }
+        }
+    },
     "Parameters": {
         "pmVpcId": {
-            "Description": "VPC Id (e.g. POC)",
             "Type": "String",
             "Default": "POC"
         },
         "pmVpcRegion": {
-            "Description": "VPC Region",
             "Type": "String",
             "Default": "us-east-1"
         },
         "pmVpcCidr": {
-            "Description": "VPC CIDR (e.g. 10.0.0.0/16)",
             "Type": "String",
             "Default": "10.0.0.0/16"
         },
         "pmPubSubnetCidr1": {
-            "Description": "Public subnet CIDR 1 (e.g. 10.0.10.0/24)",
             "Type": "String",
             "Default": "10.0.10.0/24"
         },
         "pmPubSubnetCidr2": {
-            "Description": "Public subnet CIDR 2 (e.g. 10.0.20.0/24)",
             "Type": "String",
             "Default": "10.0.20.0/24"
         },
         "pmPriSubnetCidr1": {
-            "Description": "Private subnet CIDR 1 (e.g. 10.0.50.0/24)",
             "Type": "String",
             "Default": "10.0.50.0/24"
         },
         "pmPriSubnetCidr2": {
-            "Description": "Private subnet CIDR 2 (e.g. 10.0.60.0/24)",
             "Type": "String",
             "Default": "10.0.60.0/24"
         },
         "pmAz1": {
-            "Description": "AZ 1 for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1a"
         },
         "pmAz2": {
-            "Description": "AZ 2 for public and private subnets",
             "Type": "AWS::EC2::AvailabilityZone::Name",
             "Default": "us-east-1b"
         },
         "pmWebServerImageId": {
-            "Description": "Web server EC2 image id",
             "Type": "String",
             "Default": "ami-28456852",
             "AllowedValues": [
@@ -59,7 +162,6 @@
             "ConstraintDescription": "Must be a valid web server EC2 image id"
         },
         "pmWebServerInstanceType": {
-            "Description": "Web server EC2 instance type",
             "Type": "String",
             "Default": "t2.micro",
             "AllowedValues": [
@@ -70,7 +172,6 @@
             "ConstraintDescription": "Must be a valid web server EC2 instance type"
         },
         "pmWebServerVolumeSize": {
-            "Description": "Volume size for web server EC2 instance type",
             "Type": "Number",
             "Default": "10",
             "MinValue": "5",
@@ -78,15 +179,13 @@
             "ConstraintDescription": "Must be between 5 and 1024 Gb"
         },
         "pmWebServerCapacity": {
-            "Description": "Initial number of web server EC2 instances",
             "Type": "Number",
             "Default": "1",
             "MinValue": "1",
             "MaxValue": "4",
             "ConstraintDescription": "Must be between 1 and 4 web server EC2 instances."
         },
-        "pmAccessKeyId": {
-            "Description": "Existing access key to enable SSH access to web server EC2 instance",
+        "pmWebServerAccessKeyId": {
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
         },
@@ -861,7 +960,7 @@
                 ],
                 "AssociatePublicIpAddress": "true",
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmWebServerAccessKeyId"
                 },
                 "UserData": {
                     "Fn::Base64": {

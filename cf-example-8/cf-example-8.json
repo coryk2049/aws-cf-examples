@@ -1,6 +1,123 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "Deploy 2 VPC with 2 AZ, IGW, WebServers, and VPC Peering.",
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "VPC1 Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmSite1VpcId",
+                        "pmSite1VpcRegion",
+                        "pmSite1Az1",
+                        "pmSite1Az2",
+                        "pmSite1VpcCidr",
+                        "pmSite1PubSubnetCidr1",
+                        "pmSite1PubSubnetCidr2",
+                        "pmSite1PriSubnetCidr1",
+                        "pmSite1PriSubnetCidr2"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "VPC2 Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmSite2VpcId",
+                        "pmSite2VpcRegion",
+                        "pmSite2Az1",
+                        "pmSite2Az2",
+                        "pmSite2VpcCidr",
+                        "pmSite2PubSubnetCidr1",
+                        "pmSite2PubSubnetCidr2",
+                        "pmSite2PriSubnetCidr1",
+                        "pmSite2PriSubnetCidr2"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "EC2 Configuration Parameters"
+                    },
+                    "Parameters": [
+                        "pmEc2ImageId",
+                        "pmEc2InstanceType",
+                        "pmEc2VolumeSize",
+                        "pmEc2AccessKeyId"
+                    ]
+                }
+            ],
+            "ParameterLabels": {
+                "pmSite1VpcId": {
+                    "default": "Enter VPC1 id"
+                },
+                "pmSite1VpcRegion": {
+                    "default": "Enter VPC1 region"
+                },
+                "pmSite1Az1": {
+                    "default": "Enter VPC1 AZ1"
+                },
+                "pmSite1Az2": {
+                    "default": "Enter VPC1 AZ2"
+                },
+                "pmSite1VpcCidr": {
+                    "default": "Enter VPC1 CIDR"
+                },
+                "pmSite1PubSubnetCidr1": {
+                    "default": "Enter VPC1 public subnet1"
+                },
+                "pmSite1PubSubnetCidr2": {
+                    "default": "Enter VPC1 public subnet2"
+                },
+                "pmSite1PriSubnetCidr1": {
+                    "default": "Enter VPC1 private subnet1"
+                },
+                "pmSite1PriSubnetCidr2": {
+                    "default": "Enter VPC1 private subnet2"
+                },
+                "pmSite2VpcId": {
+                    "default": "Enter VPC2 id"
+                },
+                "pmSite2VpcRegion": {
+                    "default": "Enter VPC2 region"
+                },
+                "pmSite2Az1": {
+                    "default": "Enter VPC2 AZ1"
+                },
+                "pmSite2Az2": {
+                    "default": "Enter VPC2 AZ2"
+                },
+                "pmSite2VpcCidr": {
+                    "default": "Enter VPC2 CIDR"
+                },
+                "pmSite2PubSubnetCidr1": {
+                    "default": "Enter VPC2 public subnet1"
+                },
+                "pmSite2PubSubnetCidr2": {
+                    "default": "Enter VPC2 public subnet2"
+                },
+                "pmSite2PriSubnetCidr1": {
+                    "default": "Enter VPC2 private subnet1"
+                },
+                "pmSite2PriSubnetCidr2": {
+                    "default": "Enter VPC2 private subnet2"
+                },
+                "pmEc2ImageId": {
+                    "default": "Enter EC2 image id"
+                },
+                "pmEc2InstanceType": {
+                    "default": "Enter EC2 instance type"
+                },
+                "pmEc2VolumeSize": {
+                    "default": "Enter EC2 volume size"
+                },
+                "pmEc2AccessKeyId": {
+                    "default": "Enter EC2 SSH access key"
+                }
+            }
+        }
+    },
     "Parameters": {
         "pmSite1VpcId": {
             "Type": "String",
@@ -86,7 +203,7 @@
             "Type": "Number",
             "Default": "5"
         },
-        "pmAccessKeyId": {
+        "pmEc2AccessKeyId": {
             "Type": "AWS::EC2::KeyPair::KeyName",
             "Default": "aws_cory1"
         }
@@ -844,7 +961,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmEc2AccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -897,7 +1014,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmEc2AccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -950,7 +1067,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmEc2AccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
@@ -1006,7 +1123,7 @@
                     "Ref": "pmEc2ImageId"
                 },
                 "KeyName": {
-                    "Ref": "pmAccessKeyId"
+                    "Ref": "pmEc2AccessKeyId"
                 },
                 "NetworkInterfaces": [
                     {
