@@ -20,10 +20,11 @@ Parameters:
     AssignEIP:
         Description: Used an Elastic IP (select no if temporary or not running full time)
         Type: String
-        
+        Default: 'Yes'
+
 Conditions:
     AssignEIP: 
-        !Equals [!Ref AssignEIP, Yes]
+        !Equals [!Ref AssignEIP, 'Yes']
        
 Resources:
   BastionInterface:
