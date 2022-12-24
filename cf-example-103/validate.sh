@@ -8,6 +8,6 @@ info() {
 
 
 for FN in $(ls *.yaml); do
-	info "Validating CF template file: ${FULL_FNAME}"
+	info "Validating CF template file: ${FN}"
 	aws cloudformation validate-template --template-body file://$FN;
 done
