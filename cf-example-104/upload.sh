@@ -20,8 +20,7 @@ aws s3 mb s3://${S3_BUCKET_NAME}
 
 sleep 5
 
-for FN in $(ls *.yaml);
-do
+for FN in $(ls *.yaml); do
 	info "Uploading ${FN} to S3 bucket: ${S3_BUCKET_NAME}"
 	aws s3 cp ${FN} s3://${S3_BUCKET_NAME}
 done
